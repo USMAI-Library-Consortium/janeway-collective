@@ -1,0 +1,229 @@
+# NOTICE - this deployment contains code modified from the Bitnami Postgres Helm Chart so that 
+# the Labels logic can be synchronized. Please see licenses/BITNAMI_LICENSE.md for the related
+# license
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "janeway.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  {{- $labels := include "common.tplvalues.merge" ( dict "values" ( list .Values.primary.labels .Values.commonLabels ) "context" . ) }}
+  labels: {{- include "common.labels.standard" ( dict "customLabels" $labels "context" $ ) | nindent 4 }}
+    {{ include "common.labels.component.app" . }}
+  {{ if or .Values.commonAnnotations .Values.primary.annotations -}}
+  {{- $annotations := include "common.tplvalues.merge" ( dict "values" ( list .Values.primary.annotations .Values.commonAnnotations ) "context" . ) }}
+  annotations: {{- include "common.tplvalues.render" ( dict "value" $annotations "context" $ ) | nindent 4 }}
+  {{- end }}
+spec:
+  {{- $podLabels := include "common.tplvalues.merge" ( dict "values" ( list .Values.primary.podLabels .Values.commonLabels ) "context" . ) }}
+  selector:
+    matchLabels: {{- include "common.labels.matchLabels" ( dict "customLabels" $podLabels "context" $ ) | nindent 6 }}
+      {{ include "common.labels.component.app" . }}
+  
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1   # Only one pod can be unavailable at a time
+      maxSurge: 0  
+  template:
+    metadata:
+      labels: {{- include "common.labels.standard" ( dict "customLabels" $podLabels "context" $ ) | nindent 8 }}
+        {{ include "common.labels.component.app" . }}
+        {{ if .Values.postgresql.enabled -}}
+        {{ .Release.Name }}-postgresql-client: "true"
+        {{ end }}
+      {{ if or .Values.primary.podAnnotations -}}
+      {{- $podAnnotations := include "common.tplvalues.merge" ( dict "values" ( list .Values.primary.podAnnotations ) "context" . ) }}
+      annotations: {{- include "common.tplvalues.render" ( dict "value" $podAnnotations "context" $ ) | nindent 8 }}
+      {{- end }}
+    spec:
+      securityContext:
+        fsGroup: 9950
+
+      {{- if .Values.primary.secrets.imagePullSecretName }}
+      imagePullSecrets:
+        - name: {{ .Values.primary.secrets.imagePullSecretName }}
+      {{- end }}
+
+      volumes:
+        - name: {{ include "janeway.fullname" . }}-nginx-start
+          configMap:
+            name: {{ include "janeway.fullname" . }}-nginx-start
+            defaultMode: 0755
+        {{- if (include "janeway.primary.persistence.claimName" . ) }}
+        - name: "files-vol"
+          persistentVolumeClaim:
+            claimName: {{ include "janeway.primary.persistence.claimName" . }}
+        {{ else }}
+        - name: "files-vol"
+          emptyDir: {}
+        {{- end }}
+        - name: "temp-vol"
+          emptyDir: {}
+        - name: {{ include "janeway.fullname" . }}-nginx
+          configMap:
+            name: {{ include "janeway.fullname" . }}-nginx
+
+      initContainers:
+        - name: wait-for-database
+          image: busybox:1.36.1
+          command: ['sh', '-c', "until nc -z -w 5 {{ include "janeway.database.hostname" . }} 5432 ; do echo waiting for database; sleep 2; done"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+          resources:
+            requests:
+              memory: 64Mi
+              cpu: 10m
+              ephemeral-storage: 1Ki
+            limits:
+              memory: 256Mi
+              cpu: 100m
+              ephemeral-storage: 1Ki
+        - name: copy-static-to-pvc
+          # XSL folder contains a mix of pre-packaged and dynamic files, so we need to merge those into a writeable
+          # volume.
+          image: {{ include "janeway.primary.webapp.image" . }}
+          command: ["/bin/bash", "-c", "cp -rf /vol/janeway/src/transform/xsl/* /vol/janeway/src/transform/xslDynamic && cp -rf /vol/janeway/src/static/* /vol/janeway/src/staticDynamic"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+          resources:
+            requests:
+              memory: 64Mi
+              cpu: 500m
+              ephemeral-storage: 1Ki
+            limits:
+              memory: 256Mi
+              cpu: "1"
+              ephemeral-storage: 1Ki
+
+          volumeMounts:
+            - mountPath: "/vol/janeway/src/transform/xslDynamic"
+              name: "files-vol"
+              subPath: "xsl"
+            - mountPath: "/vol/janeway/src/staticDynamic"
+              name: "files-vol"
+              subPath: "static"
+
+        - name: initialize-janeway
+          # Install or update Janeway, along with plugins
+          image: {{ include "janeway.primary.webapp.image" . }}
+          command: ["/vol/janeway/docker/initialize-janeway.sh"]
+
+          resources:
+              # Minimum necessary to schedule the pod to a node
+            requests:
+              memory: {{ .Values.primary.resources.requests.memory | quote}}
+              cpu: {{ .Values.primary.resources.requests.cpu | quote }}
+              ephemeral-storage: "64Mi"
+            # Max allowed
+            limits:
+              memory: {{ .Values.primary.resources.limits.memory | quote }}
+              cpu: {{ .Values.primary.resources.limits.cpu | quote }}
+              ephemeral-storage: "512Mi"
+
+          volumeMounts: {{ include "janeway.primary.webapp.volumeMounts" . | nindent 12}}
+
+          env: {{ include "janeway.primary.env" . | nindent 12 }}
+
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+      
+      containers:
+        - image: {{ include "janeway.primary.webapp.image" . }}
+          name: {{ .Release.Name }}-webapp
+          command: ["/bin/sh"]
+          args: ['-c', "cd /vol/janeway/src && /opt/venv/bin/gunicorn --access-logfile - --error-logfile - --bind unix:/tmp/janeway.sock core.wsgi:application"]
+
+          resources:
+              # Minimum necessary to schedule the pod to a node
+            requests:
+              memory: {{ .Values.primary.resources.requests.memory | quote}}
+              cpu: {{ .Values.primary.resources.requests.cpu | quote }}
+              ephemeral-storage: "64Mi"
+            # Max allowed
+            limits:
+              memory: {{ .Values.primary.resources.limits.memory | quote }}
+              cpu: {{ .Values.primary.resources.limits.cpu | quote }}
+              ephemeral-storage: "512Mi"
+
+          volumeMounts: {{ include "janeway.primary.webapp.volumeMounts" . | nindent 12}}
+
+          env: {{ include "janeway.primary.env" . | nindent 12 }}
+            - name: PYTHON_ENABLE_GUNICORN_MULTIWORKERS
+              value: {{ .Values.primary.gunicorn.enableMultiworkers | quote }}
+            - name: PYTHON_GUNICORN_CUSTOM_WORKER_NUM
+              value: {{ .Values.primary.gunicorn.workerNumber | quote }}
+            - name: PYTHON_GUNICORN_CUSTOM_THREAD_NUM
+              value: {{ .Values.primary.gunicorn.threadNumber | quote }}
+
+          ports:
+            - containerPort: 8050
+              name: http
+              protocol: TCP
+
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+
+        # Nginx Image
+        - image: {{print "nginx:" (.Values.primary.nginx.tagOverride | default "1.27.4") }}
+          name: {{ .Release.Name }}-nginx
+          command: ["/bin/bash", "/scripts/wait-for-janeway.sh"]
+
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "500m"
+              ephemeral-storage: "64Mi"
+            limits:
+              memory: "512Mi"
+              cpu: "1"
+              ephemeral-storage: "128Mi"
+
+          livenessProbe:
+            httpGet:
+              path: /contact
+              port: 8000
+              httpHeaders:
+                - name: Host
+                  value: {{ (include "janeway.press.networking" . | fromJson).domain }}
+            failureThreshold: 4
+            periodSeconds: 15
+            timeoutSeconds: 3
+
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8000
+              httpHeaders:
+                - name: Host
+                  value: {{ (include "janeway.press.networking" . | fromJson).domain }}
+            failureThreshold: 2
+            periodSeconds: 10
+            timeoutSeconds: 3
+          
+          volumeMounts: {{ include "janeway.primary.volumeMounts" . | nindent 12}}
+            # See "Running nginx in read-only mode" here: https://hub.docker.com/_/nginx
+            - mountPath: "/var/run"
+              name: "temp-vol"
+              subPath: "var/run"
+            - mountPath: "/var/cache/nginx"
+              name: "temp-vol"
+              subPath: "var/cache/nginx"
+            - mountPath: "/etc/nginx/nginx.conf"
+              name: {{ include "janeway.fullname" . }}-nginx
+              subPath: nginx.conf 
+            - mountPath: "/scripts/wait-for-janeway.sh"
+              name: {{ include "janeway.fullname" .  }}-nginx-start
+              subPath: wait-for-janeway.sh
+
+          ports:
+            - containerPort: 8000
+              name: http
+              protocol: TCP
+
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false

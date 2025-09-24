@@ -1,0 +1,8 @@
+# NOTICE - this deployment contains code copied from the Bitnami Postgres Helm Chart so that 
+# extra resources can be deployed. Please see licenses/BITNAMI_LICENSE.md for the related
+# license.
+
+{{- range .Values.extraDeploy }}
+---
+{{ include "common.tplvalues.render" (dict "value" . "context" $) }}
+{{- end }}

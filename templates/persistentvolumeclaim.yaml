@@ -1,0 +1,27 @@
+{{- if and .Values.primary.persistence.enabled (not .Values.primary.persistence.existingClaim) -}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "janeway.primary.persistence.claimName" . }}
+  namespace: {{ .Release.Namespace }}
+  {{- $labels := include "common.tplvalues.merge" ( dict "values" ( list .Values.primary.persistence.labels .Values.commonLabels )) }}
+  labels: {{- include "common.labels.standard" ( dict "customLabels" $labels "context" $ ) | nindent 4 }}
+    {{ include "common.labels.component.app" . }}
+  {{- if or .Values.commonAnnotations .Values.primary.persistence.annotations -}}
+  {{- $annotations := include "common.tplvalues.merge" ( dict "values" ( list .Values.primary.persistence.annotations .Values.commonAnnotations ) "context" . ) }}
+  annotations: {{- include "common.tplvalues.render" ( dict "value" $annotations "context" $ ) | nindent 4 }}
+    {{ if .Values.primary.persistence.keep -}}
+    helm.sh/resource-policy: keep
+    {{ end -}}
+  {{- end }}
+spec:
+  accessModes: {{- range .Values.primary.persistence.accessModes }}
+    - {{ .  | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.primary.persistence.size | required "Please set Janeway storage size in primary.persistence.size." | quote }}
+  {{- if (or .Values.global.defaultStorageClass .Values.primary.persistence.storageClass)  }}
+  storageClassName: {{ default .Values.global.defaultStorageClass .Values.primary.persistence.storageClass }}
+  {{- end }}
+{{- end }}

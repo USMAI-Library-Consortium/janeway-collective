@@ -1,0 +1,53 @@
+{{- if .Values.primary.ingress.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "janeway.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  {{- $labels := include "common.tplvalues.merge" ( dict "values" ( list .Values.primary.ingress.labels .Values.commonLabels ) "context" . ) }}
+  labels: {{- include "common.labels.standard" ( dict "customLabels" $labels "context" $ ) | nindent 4 }}
+    {{ include "common.labels.component.app" . }}
+  {{ if or .Values.commonAnnotations .Values.primary.ingress.annotations -}}
+  {{- $annotations := include "common.tplvalues.merge" ( dict "values" ( list .Values.primary.ingress.annotations .Values.commonAnnotations ) "context" . ) }}
+  annotations: {{- include "common.tplvalues.render" ( dict "value" $annotations "context" $ ) | nindent 4 }}
+  {{- end }}
+spec:
+  ingressClassName: "nginx"
+  {{ $journalNetworking := (include "janeway.journals.networking" . | fromYamlArray ) -}}
+  rules: 
+    # Press host is always required
+    - host: {{ (include "janeway.press.networking" . | fromJson).domain | quote }}
+      http:
+        paths:
+        - backend:
+            service:
+              name: {{ include "janeway.fullname" . }}-web
+              port:
+                number: {{ .Values.primary.service.port }}
+          path: /
+          pathType: ImplementationSpecific
+    # Additional hosts are journal hosts
+   {{- range $item := $journalNetworking }}
+    - host: {{ $item.domain | quote }}
+      http:
+        paths:
+        - backend:
+            service:
+              name: {{ include "janeway.fullname" $ }}
+              port:
+                number: {{ $.Values.primary.service.port }} 
+          path: /
+          pathType: ImplementationSpecific
+    {{- end }}
+  tls: 
+    # Press tls host is always required
+    - hosts:
+      - {{ (include "janeway.press.networking" . | fromJson).domain | quote }}
+      secretName: {{ (include "janeway.press.networking" . | fromJson).secretName | quote }}
+    # Journal tls hosts are not always present
+    {{ range $journalNetworking -}}
+    - hosts:
+        - {{ .domain | quote }}
+      secretName: {{ .secretName | quote }}
+    {{ end -}}
+{{- end -}}

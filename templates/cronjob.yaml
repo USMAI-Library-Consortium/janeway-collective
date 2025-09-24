@@ -1,0 +1,84 @@
+{{- if .Values.primary.cron.enabled -}}
+{{- range ( concat .Values.primary.cron.defaultJobs ( .Values.primary.cron.additionalJobs | default (list) ) ) -}}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "janeway.fullname" $ }}-{{ .name }}
+  namespace: {{ $.Release.Namespace }}
+  {{- $labels := include "common.tplvalues.merge" ( dict "values" ( list $.Values.commonLabels ) "context" . ) }}
+  labels: {{- include "common.labels.standard" ( dict "customLabels" $labels "context" $ ) | nindent 4 }}
+    app.kubernetes.io/component: cron
+  {{ if $.Values.commonAnnotations -}}
+  {{- $annotations := include "common.tplvalues.merge" ( dict "values" ( list $.Values.commonAnnotations ) "context" . ) }}
+  annotations: {{- include "common.tplvalues.render" ( dict "value" $annotations "context" $ ) | nindent 4 }}
+  {{- end }}
+spec:
+  schedule: {{ .schedule | quote }}
+  concurrencyPolicy: {{ .concurrencyPolicy | quote }}
+  {{ if .startingDeadlineSeconds -}} startingDeadlineSeconds: {{ .startingDeadlineSeconds -}}{{- end }}
+  jobTemplate:
+    spec:
+      {{ if .backoffLimit -}} backoffLimit: {{ .backoffLimit -}}{{- end }}
+      template:
+        metadata:
+          labels: {{- include "common.labels.standard" ( dict "customLabels" $labels "context" $ ) | nindent 12 }}
+            app.kubernetes.io/component: cron
+            {{ if $.Values.postgresql.enabled -}}
+            {{ $.Release.Name }}-postgresql-client: "true"
+            {{ end }}
+        {{- if $.Values.primary.secrets.imagePullSecretName }}
+        imagePullSecrets:
+          - name: {{ $.Values.primary.secrets.imagePullSecretName }}
+        {{- end }}
+        spec:
+          securityContext:
+            fsGroup: 9950
+            
+          volumes:
+            {{- if (include "janeway.primary.persistence.claimName" $ ) }}
+            - name: "files-vol"
+              persistentVolumeClaim:
+                claimName: {{ include "janeway.primary.persistence.claimName" $ }}
+            {{ else }}
+            - name: "files-vol"
+              emptyDir: {}
+            {{- end }}
+            - name: "temp-vol"
+              emptyDir: {}
+          restartPolicy: {{ .restartPolicy | quote }}
+          containers:
+            - image: {{ include "janeway.primary.webapp.image" $ }}
+              name: {{ include "janeway.fullname" $ }}-{{ .name }}
+
+              securityContext:
+                readOnlyRootFilesystem: true
+                allowPrivilegeEscalation: false
+
+              command:
+                {{ .command | toYaml | nindent 16 }}
+              resources:
+                requests:
+                  memory: "384Mi"
+                  cpu: ".5"
+                  ephemeral-storage: "64Mi"
+                limits:
+                  memory: "512Mi"
+                  cpu: "1"
+                  ephemeral-storage: "512Mi"
+
+              volumeMounts: {{ include "janeway.primary.webapp.volumeMounts" . | nindent 16}}
+                  
+              env: {{ include "janeway.primary.env" $ | nindent 16 }}
+
+          affinity:
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              {{- $podLabels := include "common.tplvalues.merge" ( dict "values" ( list $.Values.commonLabels ) "context" $ ) }}
+                - labelSelector:
+                    matchLabels: {{- include "common.labels.matchLabels" ( dict "customLabels" $podLabels "context" $ ) | nindent 22 }}
+                      {{ include "common.labels.component.app" $ }}
+                  topologyKey: kubernetes.io/hostname
+
+---
+{{- end -}}
+{{- end -}}

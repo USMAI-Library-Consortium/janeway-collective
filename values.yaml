@@ -1,0 +1,241 @@
+commonLabels: {} # Labels to add to all deployed resources.
+commonAnnotations: {} # Annotations to add to all deployed resources.
+
+extraDeploy: [] # A list of addtional resources to be deployed.
+
+global:
+  postgresql:
+    hostname: null # Override the hostname for the Bitnami Postgresql
+    auth:
+      externalSecret: null # The name of an external secret containing the password.
+      username: null # The username of the Postgres non-admin user.
+      database: null # The name of the Postgres database.
+      secretKeys:
+        userPasswordKey: null # The name of the key holding the password key.
+  janeway:
+    primary:
+      persistence:
+        enabled: null # Whether or not to enable Janeway PVC or use an emptydir.
+        existingClaim: null # Use an existing PVC for Janeway.
+      email:
+        host: null # Email host for Janeway.
+        port: null # Email port for Janeway.
+        useTls: null # Whether or not to enable TLS for Janeway emails.
+      env:
+        additionalEnvVars: null # Additional environment variables for the Janeway pod + cron jobs.
+      auth:
+        externalSecret: null # The existing secret name for Janeway credentials.
+    press:
+      networking:
+        domain: null # The domain for the press.
+        scheme: null # The scheme for the domain (e.g., https://).
+        externalSecret: null # If you want to use an existing network secret.
+    journals:
+      networking: [] # A list of domain names for journals, not required.
+
+primary: # Settings relating to the Janeway application.
+  labels: {} # Additional labels to add to the Deployment.
+  annotations: {} # Additional annotations to add to the Deployment.
+  podLabels: {} # Additional labels for the Deployment Pod(s).
+  podAnnotations: {} # Additional annotations for the Deployment Pod(s).
+  secrets:
+    imagePullSecretName: null # If a secret is needed to pull the image.
+    existingSuperUserSecret: null # Use an existing secret to set up the Superuser Password.
+  imageOverride:
+    repository: null # Use a different docker repository for Janeway image.
+    tag: null # Use a different Janeway image version. NOT RECOMMENDED.
+  resources:
+    requests:
+      memory: 2Gi # Set the minimum memory requirement for the Janeway Deployment.
+      cpu: 1 # Set the minimum CPU required for the Janeway Deployment.
+    limits:
+      memory: 4Gi # Set the maximum memory allocated to the Janeway Deployment.
+      cpu: 2 # Set the maximum CPUs allocated to the Janeway Deployment.
+
+  gunicorn:
+    enableMultiworkers: 'true' # Enable Gunicorn multi worker multi thread config.
+    workerNumber: "" # Set the number of Gunicorn workers. Only works when enableMultiworkers set to 'true'. Gunicorn default of (2 * CPU Core number) + 1 is used.
+    threadNumber: "1" #  Set the number of Gunicorn worker threads. Only works when enableMultiworkers set to 'true'. Default of 1.
+
+  auth:
+    superUserUsername: null # Superuser Username for when Janeway is being installed.
+    superUserPasswordKey: null # The name of the password key in the Janeway secret.
+    superUserEmail: null # The Superuser email for when Janeway is being installed.
+    externalSecret: null # An existing secret containing the Superuser password.
+
+  enableOrcid: false # Whether or not to enable the ORCID integration for Janeway.
+
+  networkPolicy:
+    allowInterpodTraffic: false # Create a networkPolicy to explicitly allow inter-pod communication.
+    allowIngress: true # Create a networkPolicy to explicity allow http ingress into the Janeway deployment.
+    allowSMTPEgress: true # Create a networkPolicy to eplicity allow SMTP egress from the Janeway deployment.
+
+  email:
+    host: null # The email host for Janeway to send SMTP emails.
+    port: null # The port to use for Janeway's email host.
+    useTls: false # Whether or not the SMTP email service should use TLS.
+
+  persistence:
+    enabled: true # Whether or not to enable Janeway persistence.
+    existingClaim: null # Use an existing PVC for Janeway Deployment persistence.
+    labels: {} # Additional labels for the Janeway PVC.
+    annotations: {} # Additional annotations for the Janeway PVC.
+    accessModes: # Access modes for the Janeway PVC.
+      - "ReadWriteOnce"
+    size: null # Storage to allocate to the Janeway PVC.
+    storageClass: null # Storage class of the Janeway PVC.
+    keep: True # Whether or not to keep the Janeway PVC when the Helm Chart is uninstalled.
+
+  ingress:
+    enabled: true # Deploy an Ingress for Janeway. Automatically generates based on Janeway Press and Journal domains.
+    labels: {} # Additional labels to add to the Janeway Ingress.
+    annotations: {} # Additional annotations to add to the Janeway Ingress.
+
+  env:
+    additionalEnvVars: [] # Additional environment variables for the Janeway pod.
+
+  cron:
+    enabled: True # Whether or not to deploy cron jobs.
+    defaultJobs: # A list of default cron jobs. These can be replaced.
+      - name: tasks
+        schedule: "*/30 * * * *"
+        concurrencyPolicy: Forbid
+        startingDeadlineSeconds: 360
+        backoffLimit:
+        restartPolicy: Never
+        command:
+          - /bin/bash
+          - -c
+          - /opt/venv/bin/python3 /vol/janeway/src/manage.py execute_cron_tasks
+      - name: ithenticate
+        schedule: "*/30 * * * *"
+        concurrencyPolicy: Forbid
+        startingDeadlineSeconds: 360
+        backoffLimit:
+        restartPolicy: Never
+        command:
+          - /bin/bash
+          - -c
+          - /opt/venv/bin/python3 /vol/janeway/src/manage.py store_ithenticate_scores
+      - name: sitemaps
+        schedule: "0 */4 * * *"
+        concurrencyPolicy: Forbid
+        startingDeadlineSeconds: 360
+        backoffLimit:
+        restartPolicy: Never
+        command:
+          - /bin/bash
+          - -c
+          - /opt/venv/bin/python3 /vol/janeway/src/manage.py generate_sitemaps
+      - name: notifications
+        schedule: "0 23 * * *"
+        concurrencyPolicy: Forbid
+        startingDeadlineSeconds: 360
+        backoffLimit:
+        restartPolicy: Never
+        command:
+          - /bin/bash
+          - -c
+          - /opt/venv/bin/python3 /vol/janeway/src/manage.py send_publication_notifications
+    additionalJobs: [] # Any additional cron jobs that you'd like to add using the built-in Cron Job template.
+
+  plugins:
+    typesettingPlugin:
+      install: false # Install the Typesetting Plugin. This cannot be undone.
+    pandocPlugin:
+      install: false # Install the Pandoc Plugin. This cannot be undone.
+    customstylingPlugin:
+      install: false # Install the Customstyling Plugin. This cannot be undone.
+    porticoPlugin:
+      install: false # Install the Portico Plugin. This cannot be undone.
+    importsPlugin:
+      install: false # Install the Imports Plugin. This cannot be undone.
+    DOAJTransporterPlugin:
+      install: false # Install the DOAJ Transporter Plugin. This cannot be undone.
+    backContentPlugin:
+      install: false # Install the Back Content Plugin. This cannot be undone.
+    reportingPlugin:
+      install: false # Install the Reporting Plugin. This cannot be undone.
+    dataCitePlugin:
+      install: false
+
+  service:
+    enabled: true # Whether or not to enable the Janeway service.
+    port: 80 # Which port the Janeway service should expose.
+    labels: {} # Any additional labels for the Janeway service.
+    annotations: {} # Any additional annotations for the Janeway service.
+
+  nginx:
+    config: |
+      events {
+          worker_connections 1024;
+      }
+
+      http {
+          include       /etc/nginx/mime.types;
+          default_type  application/octet-stream;
+
+          client_max_body_size 50m;
+
+          # Set logs location
+          access_log /dev/stdout;
+          error_log /dev/stderr;
+
+          server {
+              listen 8000 default_server;
+              server_name _;
+
+              location = /favicon.ico {
+                  access_log off;
+                  log_not_found off;
+              }
+
+              location /static/ {
+                  alias /var/www/janeway/collected-static/;
+              }
+
+              location /media/ {
+                  alias /var/www/janeway/media/;
+              }
+
+              location / {
+                proxy_set_header Host $http_host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+                proxy_set_header X-Forwarded-Host $host;
+                proxy_set_header Referer $http_referer;
+                proxy_pass http://unix:/tmp/janeway.sock;
+              }
+          }
+      }
+    # The nginx configuration used by the Janeway Nginx container.
+
+press:
+  name: null # The press name to set up when installing Janeway.
+  contact: null # The press contact to set up when installing Janeway.
+  networking:
+    domain: null # The domain for the press (Your main site).
+    scheme: null # The scheme for the domain (e.g., https://).
+    externalSecret: null # If you want to use an existing network secret.
+journals:
+  initial:
+    code: null # The code of the initial auto-created journal.
+    name: null # The name of the initial auto-created journal.
+    description: null # An optional description for the initial auto-created journal.
+  networking: [] # The networking information for journals, if journal domains are used.
+
+externalDatabase:
+  hostname: null # The hostname of the external database.
+  database: null # The database name for the external database.
+  username: null # The username for the user to access the external database.
+  externalSecret: null # The name of the secret containing the database password.
+  userPasswordKey: PG_PASSWORD # The name of the key containing the database password in the existing key.
+
+postgresql:
+  primary:
+    networkPolicy:
+      allowExternal: false
+  auth:
+    database: janeway
+    username: janeway
