@@ -33,7 +33,7 @@ spec:
         paths:
         - backend:
             service:
-              name: {{ include "janeway.fullname" $ }}
+              name: {{ include "janeway.fullname" $ }}-web
               port:
                 number: {{ $.Values.primary.service.port }} 
           path: /

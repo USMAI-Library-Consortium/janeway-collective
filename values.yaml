@@ -140,8 +140,6 @@ primary: # Settings relating to the Janeway application.
     additionalJobs: [] # Any additional cron jobs that you'd like to add using the built-in Cron Job template.
 
   plugins:
-    typesettingPlugin:
-      install: false # Install the Typesetting Plugin. This cannot be undone.
     pandocPlugin:
       install: false # Install the Pandoc Plugin. This cannot be undone.
     customstylingPlugin:
@@ -223,6 +221,7 @@ journals:
     code: null # The code of the initial auto-created journal.
     name: null # The name of the initial auto-created journal.
     description: null # An optional description for the initial auto-created journal.
+    domainIndex: null # Which domain from the list of journal networks to use, if any.
   networking: [] # The networking information for journals, if journal domains are used.
 
 externalDatabase:
