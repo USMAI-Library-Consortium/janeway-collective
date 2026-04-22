@@ -270,6 +270,8 @@ Define Janeway options for setting up domains
   {{- $schemes = append $schemes (.scheme | default "https://") -}}
   {{- end -}}
   value: {{ (join "," $schemes) | quote }}
+- name: JANEWAY_DEFAULT_JOURNAL_INDEX
+  value: {{ .Values.journals.initial.domainIndex | default "" | quote }}
 - name: INSTALL_CRON
   value: "FALSE"
 {{ include "janeway.primary.env.plugins" . }}
@@ -292,8 +294,6 @@ Define Janeway options for setting up domains
 {{- end -}}
 
 {{- define "janeway.primary.env.plugins" -}}
-- name: INSTALL_TYPESETTING_PLUGIN
-  value: {{ if .Values.primary.plugins.typesettingPlugin.install }}"TRUE"{{ else }}"FALSE"{{ end }}
 - name: INSTALL_PANDOC_PLUGIN
   value: {{ if .Values.primary.plugins.pandocPlugin.install }}"TRUE"{{ else }}"FALSE"{{ end }}
 - name: INSTALL_CUSTOMSTYLING_PLUGIN
@@ -349,5 +349,5 @@ Volume Mounts shared between Janeway and Nginx.
 {{- end -}}
 
 {{- define "janeway.primary.webapp.image" -}}
-{{ print (.Values.primary.imageOverride.repository | default "janeway-warpspeed") ":" (.Values.primary.imageOverride.tag | default "0.2.105") }}
+{{ print (.Values.primary.imageOverride.repository | default "janeway-warpspeed") ":" (.Values.primary.imageOverride.tag | default "0.10.2") }}
 {{- end -}}
