@@ -63,7 +63,6 @@ spec:
                   ephemeral-storage: "64Mi"
                 limits:
                   memory: "512Mi"
-                  cpu: "1"
                   ephemeral-storage: "512Mi"
 
               volumeMounts: {{ include "janeway.primary.webapp.volumeMounts" . | nindent 16}}

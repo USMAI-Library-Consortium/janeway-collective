@@ -50,7 +50,6 @@ primary: # Settings relating to the Janeway application.
       cpu: 1 # Set the minimum CPU required for the Janeway Deployment.
     limits:
       memory: 4Gi # Set the maximum memory allocated to the Janeway Deployment.
-      cpu: 2 # Set the maximum CPUs allocated to the Janeway Deployment.
 
   gunicorn:
     enableMultiworkers: 'true' # Enable Gunicorn multi worker multi thread config.
