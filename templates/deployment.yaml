@@ -77,7 +77,6 @@ spec:
               ephemeral-storage: 1Ki
             limits:
               memory: 256Mi
-              cpu: 100m
               ephemeral-storage: 1Ki
         - name: copy-static-to-pvc
           # XSL folder contains a mix of pre-packaged and dynamic files, so we need to merge those into a writeable
@@ -94,7 +93,6 @@ spec:
               ephemeral-storage: 1Ki
             limits:
               memory: 256Mi
-              cpu: "1"
               ephemeral-storage: 1Ki
 
           volumeMounts:
@@ -119,7 +117,6 @@ spec:
             # Max allowed
             limits:
               memory: {{ .Values.primary.resources.limits.memory | quote }}
-              cpu: {{ .Values.primary.resources.limits.cpu | quote }}
               ephemeral-storage: "512Mi"
 
           volumeMounts: {{ include "janeway.primary.webapp.volumeMounts" . | nindent 12}}
@@ -145,7 +142,6 @@ spec:
             # Max allowed
             limits:
               memory: {{ .Values.primary.resources.limits.memory | quote }}
-              cpu: {{ .Values.primary.resources.limits.cpu | quote }}
               ephemeral-storage: "512Mi"
 
           volumeMounts: {{ include "janeway.primary.webapp.volumeMounts" . | nindent 12}}
@@ -179,7 +175,6 @@ spec:
               ephemeral-storage: "64Mi"
             limits:
               memory: "512Mi"
-              cpu: "1"
               ephemeral-storage: "128Mi"
 
           livenessProbe:
