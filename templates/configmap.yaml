@@ -15,7 +15,7 @@ metadata:
   {{- end }}
 data:
   nginx.conf: |
-{{- .Values.primary.nginx.config | nindent 4 }}
+{{- .Values.nginx.config | nindent 4 }}
 
 ---
 

@@ -1,14 +1,14 @@
-{{- if .Values.primary.ingress.enabled -}}
+{{- if .Values.ingress.enabled -}}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ include "janeway.fullname" . }}
   namespace: {{ .Release.Namespace }}
-  {{- $labels := include "common.tplvalues.merge" ( dict "values" ( list .Values.primary.ingress.labels .Values.commonLabels ) "context" . ) }}
+  {{- $labels := include "common.tplvalues.merge" ( dict "values" ( list .Values.ingress.labels .Values.commonLabels ) "context" . ) }}
   labels: {{- include "common.labels.standard" ( dict "customLabels" $labels "context" $ ) | nindent 4 }}
     {{ include "common.labels.component.app" . }}
-  {{ if or .Values.commonAnnotations .Values.primary.ingress.annotations -}}
-  {{- $annotations := include "common.tplvalues.merge" ( dict "values" ( list .Values.primary.ingress.annotations .Values.commonAnnotations ) "context" . ) }}
+  {{ if or .Values.commonAnnotations .Values.ingress.annotations -}}
+  {{- $annotations := include "common.tplvalues.merge" ( dict "values" ( list .Values.ingress.annotations .Values.commonAnnotations ) "context" . ) }}
   annotations: {{- include "common.tplvalues.render" ( dict "value" $annotations "context" $ ) | nindent 4 }}
   {{- end }}
 spec:
@@ -23,7 +23,7 @@ spec:
             service:
               name: {{ include "janeway.fullname" . }}-web
               port:
-                number: {{ .Values.primary.service.port }}
+                number: {{ .Values.service.port }}
           path: /
           pathType: ImplementationSpecific
     # Additional hosts are journal hosts
@@ -35,7 +35,7 @@ spec:
             service:
               name: {{ include "janeway.fullname" $ }}-web
               port:
-                number: {{ $.Values.primary.service.port }} 
+                number: {{ $.Values.service.port }} 
           path: /
           pathType: ImplementationSpecific
     {{- end }}

@@ -1,5 +1,5 @@
-{{- if .Values.primary.cron.enabled -}}
-{{- range ( concat .Values.primary.cron.defaultJobs ( .Values.primary.cron.additionalJobs | default (list) ) ) -}}
+{{- if .Values.cron.enabled -}}
+{{- range ( concat .Values.cron.defaultJobs ( .Values.cron.additionalJobs | default (list) ) ) -}}
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -26,19 +26,19 @@ spec:
             {{ if $.Values.postgresql.enabled -}}
             {{ $.Release.Name }}-postgresql-client: "true"
             {{ end }}
-        {{- if $.Values.primary.secrets.imagePullSecretName }}
+        {{- if $.Values.secrets.imagePullSecretName }}
         imagePullSecrets:
-          - name: {{ $.Values.primary.secrets.imagePullSecretName }}
+          - name: {{ $.Values.secrets.imagePullSecretName }}
         {{- end }}
         spec:
           securityContext:
-            fsGroup: 9950
+            fsGroup: "9950"
             
           volumes:
-            {{- if (include "janeway.primary.persistence.claimName" $ ) }}
+            {{- if (include "janeway.persistence.claimName" $ ) }}
             - name: "files-vol"
               persistentVolumeClaim:
-                claimName: {{ include "janeway.primary.persistence.claimName" $ }}
+                claimName: {{ include "janeway.persistence.claimName" $ }}
             {{ else }}
             - name: "files-vol"
               emptyDir: {}
@@ -47,7 +47,7 @@ spec:
               emptyDir: {}
           restartPolicy: {{ .restartPolicy | quote }}
           containers:
-            - image: {{ include "janeway.primary.webapp.image" $ }}
+            - image: {{ include "janeway.webapp.image" $ }}
               name: {{ include "janeway.fullname" $ }}-{{ .name }}
 
               securityContext:
@@ -65,9 +65,9 @@ spec:
                   memory: "512Mi"
                   ephemeral-storage: "512Mi"
 
-              volumeMounts: {{ include "janeway.primary.webapp.volumeMounts" . | nindent 16}}
+              volumeMounts: {{ include "janeway.webapp.volumeMounts" . | nindent 16}}
                   
-              env: {{ include "janeway.primary.env" $ | nindent 16 }}
+              env: {{ include "janeway.env" $ | nindent 16 }}
 
           affinity:
             podAffinity:
