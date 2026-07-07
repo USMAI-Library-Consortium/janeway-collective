@@ -108,6 +108,7 @@ persistence:
 
 ingress:
   enabled: true # Deploy an Ingress for Janeway. Automatically generates based on Janeway Press and Journal domains.
+  ingressClassName: "traefik"
   labels: {} # Additional labels to add to the Janeway Ingress.
   annotations: {} # Additional annotations to add to the Janeway Ingress.
 
