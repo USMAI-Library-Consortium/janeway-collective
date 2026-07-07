@@ -28,9 +28,6 @@ spec:
     metadata:
       labels: {{- include "common.labels.standard" ( dict "customLabels" $podLabels "context" $ ) | nindent 8 }}
         {{ include "common.labels.component.app" . }}
-        {{ if .Values.postgresql.enabled -}}
-        {{ .Release.Name }}-postgresql-client: "true"
-        {{ end }}
       {{ if or .Values.podAnnotations -}}
       {{- $podAnnotations := include "common.tplvalues.merge" ( dict "values" ( list .Values.podAnnotations ) "context" . ) }}
       annotations: {{- include "common.tplvalues.render" ( dict "value" $podAnnotations "context" $ ) | nindent 8 }}
