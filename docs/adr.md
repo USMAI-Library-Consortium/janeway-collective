@@ -54,7 +54,7 @@ Let's take at an example so that I can explain what's going on:
   the chart can add labels to resources via their `values.yaml` files. There's
   a few different variable types, which will add labels to particular resources.
   Annotations have this same feature.
-  
+
   Please search the `values.yaml` file in the root of this repository `label`
   or `annotation` to find the different types you can use.
 
@@ -71,3 +71,8 @@ Let's take at an example so that I can explain what's going on:
   labels, in addition to the additional labels we assigned to the variable in
   in the first line.
 * Third Line: Add the app.kubernetes.io/component label discussed in ADR-1.
+
+## ADR-3: Empty Values in Values.yaml
+
+I've included empty values in values.yaml because chart repositories will use
+this to auto-generate documentation.
