@@ -38,7 +38,7 @@ I am no longer using the Bitnami Postgres chart, but this is still a neat way
 of doing labels. It also allows downstream users to override stock labels
 / annotations by providing their own 'common' chart or to add their
 own labels / annotations as though the `labels`, `annotations`, `commonLabels`,
-etc varibles. The more specific variables (`labels`, `annotations`) override
+etc variables. The more specific variables (`labels`, `annotations`) override
 the more general variables (`commonLabels`, `commonAnnotations`).
 
 Let's take at an example so that I can explain what's going on:
@@ -49,12 +49,18 @@ Let's take at an example so that I can explain what's going on:
     {{ include "common.labels.component.app" . }}
 ```
 
-* First Line: Create a string-yaml 'labels' variable from the merged labels and
-  commonLabels variables. This allows users to define labels that they want
-  their resources to have, and there are various different ones (
-  `service.labels`, `podLabels`, etc) The values of these variables allow for
-  templating, which is NOT a default of helm veriable values. This is nice as
-  we could implement UMD's part-of labels through that feature:
+* First Line: Create a 'labels' variable of YAML + String type from the labels
+  and commonLabels variables. These variables are provided so that the user of
+  the chart can add labels to resources via their `values.yaml` files. There's
+  a few different variable types, which will add labels to particular resources.
+  Annotations have this same feature.
+  
+  Please search the `values.yaml` file in the root of this repository `label`
+  or `annotation` to find the different types you can use.
+
+  The values of these variables allow for templating, which is NOT a default
+  of helm variable values. This is nice as we could implement a label that has
+  a dynamic value without modifying the chart or forking Bitnami Common:
 
     ```helm
     commonLabels:
@@ -62,5 +68,6 @@ Let's take at an example so that I can explain what's going on:
     ```
 
 * Second Line: Render the Bitnami common labels list, which sets up many best-practice
-  labels, in addition to the additional labels we merged in the first line.
+  labels, in addition to the additional labels we assigned to the variable in
+  in the first line.
 * Third Line: Add the app.kubernetes.io/component label discussed in ADR-1.
