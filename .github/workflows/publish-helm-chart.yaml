@@ -29,4 +29,4 @@ jobs:
 
       - name: Push Chart to GHCR
         shell: bash
-        run: helm push *.tgz oci://ghcr.io/usmai-library-consortium/janeway
+        run: helm push *.tgz oci://ghcr.io/usmai-library-consortium/janeway-collective
