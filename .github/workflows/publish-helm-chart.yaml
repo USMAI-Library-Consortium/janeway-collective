@@ -1,0 +1,24 @@
+name: Publish Helm Chart
+
+on:
+  release:
+    types: [published] # Release and Pre-Release
+  
+jobs:
+  Publish-Helm-Chart:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Helm Publish Action
+        uses: huggingface/helm-publish-action@1.1.0
+        with:
+          workingDirectory: .
+          repository: oci://ghcr.io/usmai-library-consortium/your-chart
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          updateDependencies: 'true'

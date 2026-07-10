@@ -301,5 +301,5 @@ Volume Mounts shared between Janeway and Nginx.
 {{- end -}}
 
 {{- define "janeway.webapp.image" -}}
-{{ print (.Values.imageOverride.repository | default "janeway-warpspeed") ":" (.Values.imageOverride.tag | default "0.10.2") }}
+{{ print (.Values.imageOverride.repository | default "ghcr.io/usmai-library-consortium/janeway") ":" (.Values.imageOverride.tag | default "v1.8.0.base.0-1") }}
 {{- end -}}

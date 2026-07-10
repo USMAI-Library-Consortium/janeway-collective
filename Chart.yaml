@@ -1,6 +1,6 @@
 apiVersion: v2
 name: janeway
-description: A Helm chart to deploy multiple instances of Janeway.
+description: A Helm Chart which supports rapidly deploying one or more Janeway instances.
 
 # A chart can be either an 'application' or a 'library' chart.
 #
