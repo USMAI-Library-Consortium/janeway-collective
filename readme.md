@@ -5,10 +5,15 @@ Gunicorn, and contains all default Janeway cron jobs re-implemented as
 Kubernetes cronjobs. This helm chart can be use to deploy multiple Janeway
 instances (a _collective_) by using multiple releases.
 
-IMPORTANT NOTE: This repository contains an optional **Bitnami Postgres**
-subchart, the docker image of which is paywalled as of August 2025. You can
-still use this subchart if you build the docker image yourself and
-override the repository.
+## Test Rendering the Template
+
+It can be helpful to test render this template. This will show any render
+errors as well as allow you to inspect the output.
+
+1. Create a values file with the remaining required values that don't
+   have defaults. If you create a `./tmp` folder in root, you can store
+   these files there without them being tracked in source control.
+2. Run `helm template janeway ./ -f tmp/yourValuesFileName.yaml`
 
 ## Packaging this Helm Chart
 

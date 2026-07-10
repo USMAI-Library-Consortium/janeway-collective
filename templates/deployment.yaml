@@ -6,15 +6,15 @@ kind: Deployment
 metadata:
   name: {{ include "janeway.fullname" . }}
   namespace: {{ .Release.Namespace }}
-  {{- $labels := include "common.tplvalues.merge" ( dict "values" ( list .Values.primary.labels .Values.commonLabels ) "context" . ) }}
+  {{- $labels := include "common.tplvalues.merge" ( dict "values" ( list .Values.labels .Values.commonLabels ) "context" . ) }}
   labels: {{- include "common.labels.standard" ( dict "customLabels" $labels "context" $ ) | nindent 4 }}
     {{ include "common.labels.component.app" . }}
-  {{ if or .Values.commonAnnotations .Values.primary.annotations -}}
-  {{- $annotations := include "common.tplvalues.merge" ( dict "values" ( list .Values.primary.annotations .Values.commonAnnotations ) "context" . ) }}
+  {{ if or .Values.commonAnnotations .Values.annotations -}}
+  {{- $annotations := include "common.tplvalues.merge" ( dict "values" ( list .Values.annotations .Values.commonAnnotations ) "context" . ) }}
   annotations: {{- include "common.tplvalues.render" ( dict "value" $annotations "context" $ ) | nindent 4 }}
   {{- end }}
 spec:
-  {{- $podLabels := include "common.tplvalues.merge" ( dict "values" ( list .Values.primary.podLabels .Values.commonLabels ) "context" . ) }}
+  {{- $podLabels := include "common.tplvalues.merge" ( dict "values" ( list .Values.podLabels .Values.commonLabels ) "context" . ) }}
   selector:
     matchLabels: {{- include "common.labels.matchLabels" ( dict "customLabels" $podLabels "context" $ ) | nindent 6 }}
       {{ include "common.labels.component.app" . }}
@@ -28,20 +28,17 @@ spec:
     metadata:
       labels: {{- include "common.labels.standard" ( dict "customLabels" $podLabels "context" $ ) | nindent 8 }}
         {{ include "common.labels.component.app" . }}
-        {{ if .Values.postgresql.enabled -}}
-        {{ .Release.Name }}-postgresql-client: "true"
-        {{ end }}
-      {{ if or .Values.primary.podAnnotations -}}
-      {{- $podAnnotations := include "common.tplvalues.merge" ( dict "values" ( list .Values.primary.podAnnotations ) "context" . ) }}
+      {{ if or .Values.podAnnotations -}}
+      {{- $podAnnotations := include "common.tplvalues.merge" ( dict "values" ( list .Values.podAnnotations ) "context" . ) }}
       annotations: {{- include "common.tplvalues.render" ( dict "value" $podAnnotations "context" $ ) | nindent 8 }}
       {{- end }}
     spec:
       securityContext:
-        fsGroup: 9950
+        fsGroup: "9950"
 
-      {{- if .Values.primary.secrets.imagePullSecretName }}
+      {{- if .Values.secrets.imagePullSecretName }}
       imagePullSecrets:
-        - name: {{ .Values.primary.secrets.imagePullSecretName }}
+        - name: {{ .Values.secrets.imagePullSecretName }}
       {{- end }}
 
       volumes:
@@ -49,10 +46,10 @@ spec:
           configMap:
             name: {{ include "janeway.fullname" . }}-nginx-start
             defaultMode: 0755
-        {{- if (include "janeway.primary.persistence.claimName" . ) }}
+        {{- if (include "janeway.persistence.claimName" . ) }}
         - name: "files-vol"
           persistentVolumeClaim:
-            claimName: {{ include "janeway.primary.persistence.claimName" . }}
+            claimName: {{ include "janeway.persistence.claimName" . }}
         {{ else }}
         - name: "files-vol"
           emptyDir: {}
@@ -81,7 +78,7 @@ spec:
         - name: copy-static-to-pvc
           # XSL folder contains a mix of pre-packaged and dynamic files, so we need to merge those into a writeable
           # volume.
-          image: {{ include "janeway.primary.webapp.image" . }}
+          image: {{ include "janeway.webapp.image" . }}
           command: ["/bin/bash", "-c", "cp -rf /vol/janeway/src/transform/xsl/* /vol/janeway/src/transform/xslDynamic && cp -rf /vol/janeway/src/static/* /vol/janeway/src/staticDynamic"]
           securityContext:
             allowPrivilegeEscalation: false
@@ -105,30 +102,30 @@ spec:
 
         - name: initialize-janeway
           # Install or update Janeway, along with plugins
-          image: {{ include "janeway.primary.webapp.image" . }}
+          image: {{ include "janeway.webapp.image" . }}
           command: ["/vol/janeway/docker/initialize-janeway.sh"]
 
           resources:
               # Minimum necessary to schedule the pod to a node
             requests:
-              memory: {{ .Values.primary.resources.requests.memory | quote}}
-              cpu: {{ .Values.primary.resources.requests.cpu | quote }}
+              memory: {{ .Values.resources.requests.memory | quote}}
+              cpu: {{ .Values.resources.requests.cpu | quote }}
               ephemeral-storage: "64Mi"
             # Max allowed
             limits:
-              memory: {{ .Values.primary.resources.limits.memory | quote }}
+              memory: {{ .Values.resources.limits.memory | quote }}
               ephemeral-storage: "512Mi"
 
-          volumeMounts: {{ include "janeway.primary.webapp.volumeMounts" . | nindent 12}}
+          volumeMounts: {{ include "janeway.webapp.volumeMounts" . | nindent 12}}
 
-          env: {{ include "janeway.primary.env" . | nindent 12 }}
+          env: {{ include "janeway.env" . | nindent 12 }}
 
           securityContext:
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
       
       containers:
-        - image: {{ include "janeway.primary.webapp.image" . }}
+        - image: {{ include "janeway.webapp.image" . }}
           name: {{ .Release.Name }}-webapp
           command: ["/bin/sh"]
           args: ['-c', "cd /vol/janeway/src && /opt/venv/bin/gunicorn --access-logfile - --error-logfile - --bind unix:/tmp/janeway.sock core.wsgi:application"]
@@ -136,23 +133,23 @@ spec:
           resources:
               # Minimum necessary to schedule the pod to a node
             requests:
-              memory: {{ .Values.primary.resources.requests.memory | quote}}
-              cpu: {{ .Values.primary.resources.requests.cpu | quote }}
+              memory: {{ .Values.resources.requests.memory | quote}}
+              cpu: {{ .Values.resources.requests.cpu | quote }}
               ephemeral-storage: "64Mi"
             # Max allowed
             limits:
-              memory: {{ .Values.primary.resources.limits.memory | quote }}
+              memory: {{ .Values.resources.limits.memory | quote }}
               ephemeral-storage: "512Mi"
 
-          volumeMounts: {{ include "janeway.primary.webapp.volumeMounts" . | nindent 12}}
+          volumeMounts: {{ include "janeway.webapp.volumeMounts" . | nindent 12}}
 
-          env: {{ include "janeway.primary.env" . | nindent 12 }}
+          env: {{ include "janeway.env" . | nindent 12 }}
             - name: PYTHON_ENABLE_GUNICORN_MULTIWORKERS
-              value: {{ .Values.primary.gunicorn.enableMultiworkers | quote }}
+              value: {{ .Values.gunicorn.enableMultiworkers | quote }}
             - name: PYTHON_GUNICORN_CUSTOM_WORKER_NUM
-              value: {{ .Values.primary.gunicorn.workerNumber | quote }}
+              value: {{ .Values.gunicorn.workerNumber | quote }}
             - name: PYTHON_GUNICORN_CUSTOM_THREAD_NUM
-              value: {{ .Values.primary.gunicorn.threadNumber | quote }}
+              value: {{ .Values.gunicorn.threadNumber | quote }}
 
           ports:
             - containerPort: 8050
@@ -164,7 +161,7 @@ spec:
             allowPrivilegeEscalation: false
 
         # Nginx Image
-        - image: {{print "nginx:" (.Values.primary.nginx.tagOverride | default "1.27.4") }}
+        - image: {{print "nginx:" (.Values.nginx.tagOverride | default "1.27.4") }}
           name: {{ .Release.Name }}-nginx
           command: ["/bin/bash", "/scripts/wait-for-janeway.sh"]
 
@@ -199,7 +196,7 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 3
           
-          volumeMounts: {{ include "janeway.primary.volumeMounts" . | nindent 12}}
+          volumeMounts: {{ include "janeway.volumeMounts" . | nindent 12}}
             # See "Running nginx in read-only mode" here: https://hub.docker.com/_/nginx
             - mountPath: "/var/run"
               name: "temp-vol"
