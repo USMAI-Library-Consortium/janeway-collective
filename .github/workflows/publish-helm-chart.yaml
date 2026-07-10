@@ -18,7 +18,7 @@ jobs:
         uses: huggingface/helm-publish-action@1.1.0
         with:
           workingDirectory: .
-          repository: oci://ghcr.io/usmai-library-consortium/your-chart
+          repository: oci://ghcr.io/usmai-library-consortium/janeway
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
           updateDependencies: 'true'
