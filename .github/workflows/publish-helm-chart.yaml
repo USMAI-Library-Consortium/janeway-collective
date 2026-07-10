@@ -14,11 +14,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      - name: Helm Publish Action
-        uses: huggingface/helm-publish-action@1.1.0
+      - uses: azure/setup-helm@v5
         with:
-          workingDirectory: .
-          repository: oci://ghcr.io/usmai-library-consortium/janeway
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-          updateDependencies: 'true'
+          version: 'latest' # default is latest (stable)
+        id: install
+
+      - name: Login to GHCR
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Build Chart
+        shell: bash
+        run: helm package .
+
+      - name: Push Chart to GHCR
+        shell: bash
+        run: helm push *.tgz oci://ghcr.io/usmai-library-consortium/janeway

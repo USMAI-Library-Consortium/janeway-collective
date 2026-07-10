@@ -20,7 +20,7 @@ errors as well as allow you to inspect the output.
 To package this Helm chart for distribution, increment the 'version' in
 Chart.yaml and run the following command:
 
-`helm package ./ -d ./dist`
+`helm package . -d ./dist`
 
 You may need to create the `dist` folder if it's not there. You may then
 upload the resulting tar file to your Helm repository.
