@@ -23,9 +23,6 @@ spec:
         metadata:
           labels: {{- include "common.labels.standard" ( dict "customLabels" $labels "context" $ ) | nindent 12 }}
             app.kubernetes.io/component: cron
-            {{ if $.Values.postgresql.enabled -}}
-            {{ $.Release.Name }}-postgresql-client: "true"
-            {{ end }}
         {{- if $.Values.secrets.imagePullSecretName }}
         imagePullSecrets:
           - name: {{ $.Values.secrets.imagePullSecretName }}
