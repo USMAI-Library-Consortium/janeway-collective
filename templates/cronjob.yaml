@@ -29,7 +29,7 @@ spec:
         {{- end }}
         spec:
           securityContext:
-            fsGroup: "9950"
+            fsGroup: 9950
             
           volumes:
             {{- if (include "janeway.persistence.claimName" $ ) }}
