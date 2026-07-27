@@ -13,12 +13,12 @@ metadata:
   annotations: {{- include "common.tplvalues.render" ( dict "value" $annotations "context" $ ) | nindent 4 }}
   {{- end }}
 spec:
+  timeZone: {{ $.Values.cron.timeZone }}
   schedule: {{ .schedule | quote }}
   concurrencyPolicy: {{ .concurrencyPolicy | quote }}
   {{ if .startingDeadlineSeconds -}} startingDeadlineSeconds: {{ .startingDeadlineSeconds -}}{{- end }}
   jobTemplate:
     spec:
-      timeZone: {{ $.Values.cron.timeZone }}
       {{ if .backoffLimit -}} backoffLimit: {{ .backoffLimit -}}{{- end }}
       template:
         metadata:
