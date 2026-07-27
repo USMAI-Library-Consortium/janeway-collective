@@ -18,6 +18,7 @@ spec:
   {{ if .startingDeadlineSeconds -}} startingDeadlineSeconds: {{ .startingDeadlineSeconds -}}{{- end }}
   jobTemplate:
     spec:
+      timeZone: {{ $.Values.cron.timeZone }}
       {{ if .backoffLimit -}} backoffLimit: {{ .backoffLimit -}}{{- end }}
       template:
         metadata:

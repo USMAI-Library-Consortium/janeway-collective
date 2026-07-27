@@ -116,6 +116,7 @@ env:
   additionalEnvVars: [] # Additional environment variables for the Janeway pod.
 
 cron:
+  timeZone: null
   enabled: True # Whether or not to deploy cron jobs.
   defaultJobs: # A list of default cron jobs. These can be replaced.
     - name: tasks

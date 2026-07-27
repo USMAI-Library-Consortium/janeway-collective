@@ -14,8 +14,7 @@ metadata:
 spec:
   ingressClassName: {{ .Values.ingress.ingressClassName }}
   {{ $journalNetworking := (include "janeway.journals.networking" . | fromYamlArray ) -}}
-  rules: 
-    # Press host is always required
+  rules:
     - host: {{ (include "janeway.press.networking" . | fromJson).domain | quote }}
       http:
         paths:
@@ -26,8 +25,7 @@ spec:
                 number: {{ .Values.service.port }}
           path: /
           pathType: ImplementationSpecific
-    # Additional hosts are journal hosts
-   {{- range $item := $journalNetworking }}
+  {{- range $item := $journalNetworking }}
     - host: {{ $item.domain | quote }}
       http:
         paths:
@@ -35,19 +33,8 @@ spec:
             service:
               name: {{ include "janeway.fullname" $ }}-web
               port:
-                number: {{ $.Values.service.port }} 
+                number: {{ $.Values.service.port }}
           path: /
           pathType: ImplementationSpecific
-    {{- end }}
-  tls: 
-    # Press tls host is always required
-    - hosts:
-      - {{ (include "janeway.press.networking" . | fromJson).domain | quote }}
-      secretName: {{ (include "janeway.press.networking" . | fromJson).secretName | quote }}
-    # Journal tls hosts are not always present
-    {{ range $journalNetworking -}}
-    - hosts:
-        - {{ .domain | quote }}
-      secretName: {{ .secretName | quote }}
-    {{ end -}}
+  {{- end }}
 {{- end -}}
