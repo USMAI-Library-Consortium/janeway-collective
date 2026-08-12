@@ -250,19 +250,19 @@ Define Janeway options for setting up domains
 {{- end -}}
 
 {{- define "janeway.env.additionalEnvVars" -}}
-  {{- if .Values.env.additionalEnvVars -}}
-    {{- range .Values.env.additionalEnvVars -}}
+{{- if .Values.env.additionalEnvVars }}
+{{- range .Values.env.additionalEnvVars }}
 - name: {{ .name }}
   value: {{ .value | quote }}
-    {{ end -}}
-  {{- end -}}
-  {{- if .Values.global.janeway.env.additionalEnvVars -}}
-    {{- range .Values.global.janeway.env.additionalEnvVars -}}
+{{- end }}
+{{- end }}
+{{- if .Values.global.janeway.env.additionalEnvVars }}
+{{- range .Values.global.janeway.env.additionalEnvVars }}
 - name: {{ .name }}
   value: {{ .value | quote }}
-    {{ end -}}
-  {{- end -}}
-{{- end -}}
+{{- end }}
+{{- end }}
+{{- end }}
 
 {{/*
 Volume Mounts used by Janeway App and it's CronJobs.
