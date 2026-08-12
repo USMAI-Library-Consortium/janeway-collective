@@ -249,17 +249,56 @@ Define Janeway options for setting up domains
 {{ include "janeway.env.additionalEnvVars" . }}
 {{- end -}}
 
+{{/*
+Renders a single env var entry.
+Supports:
+  - name: FOO
+    value: "bar"
+  - name: SECRET_VAR
+    valueFrom:
+      secretKeyRef:
+        name: my-secret
+        key: my-key
+        optional: true          # optional
+  - name: CM_VAR
+    valueFrom:
+      configMapKeyRef:
+        name: my-configmap
+        key: my-key
+*/}}
+{{- define "janeway.env.renderVar" -}}
+- name: {{ .name }}
+{{- if .valueFrom }}
+  valueFrom:
+  {{- if .valueFrom.secretKeyRef }}
+    secretKeyRef:
+      name: {{ .valueFrom.secretKeyRef.name }}
+      key: {{ .valueFrom.secretKeyRef.key }}
+    {{- if hasKey .valueFrom.secretKeyRef "optional" }}
+      optional: {{ .valueFrom.secretKeyRef.optional }}
+    {{- end }}
+  {{- else if .valueFrom.configMapKeyRef }}
+    configMapKeyRef:
+      name: {{ .valueFrom.configMapKeyRef.name }}
+      key: {{ .valueFrom.configMapKeyRef.key }}
+    {{- if hasKey .valueFrom.configMapKeyRef "optional" }}
+      optional: {{ .valueFrom.configMapKeyRef.optional }}
+    {{- end }}
+  {{- end }}
+{{- else }}
+  value: {{ .value | quote }}
+{{- end }}
+{{- end }}
+
 {{- define "janeway.env.additionalEnvVars" -}}
 {{- if .Values.env.additionalEnvVars }}
 {{- range .Values.env.additionalEnvVars }}
-- name: {{ .name }}
-  value: {{ .value | quote }}
+{{ include "janeway.env.renderVar" . }}
 {{- end }}
 {{- end }}
 {{- if .Values.global.janeway.env.additionalEnvVars }}
 {{- range .Values.global.janeway.env.additionalEnvVars }}
-- name: {{ .name }}
-  value: {{ .value | quote }}
+{{ include "janeway.env.renderVar" . }}
 {{- end }}
 {{- end }}
 {{- end }}
