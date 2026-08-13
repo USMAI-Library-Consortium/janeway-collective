@@ -73,9 +73,7 @@ resources:
     memory: 4Gi # Set the maximum memory allocated to the Janeway Deployment.
 
 gunicorn:
-  enableMultiworkers: 'true' # Enable Gunicorn multi worker multi thread config.
-  workerNumber: "" # Set the number of Gunicorn workers. Only works when enableMultiworkers set to 'true'. Gunicorn default of (2 * CPU Core number) + 1 is used.
-  threadNumber: "1" #  Set the number of Gunicorn worker threads. Only works when enableMultiworkers set to 'true'. Default of 1.
+  workerNumber: "3" # Set the number of Gunicorn workers. Only works when enableMultiworkers set to 'true'. Gunicorn default of (2 * CPU Core number) + 1 is used.
 
 auth:
   superUserUsername: null # Superuser Username for when Janeway is being installed.

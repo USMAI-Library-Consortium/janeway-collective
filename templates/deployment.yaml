@@ -144,12 +144,10 @@ spec:
           volumeMounts: {{ include "janeway.webapp.volumeMounts" . | nindent 12}}
 
           env: {{ include "janeway.env" . | nindent 12 }}
-            - name: PYTHON_ENABLE_GUNICORN_MULTIWORKERS
-              value: {{ .Values.gunicorn.enableMultiworkers | quote }}
-            - name: PYTHON_GUNICORN_CUSTOM_WORKER_NUM
+            - name: WEB_CONCURRENCY
               value: {{ .Values.gunicorn.workerNumber | quote }}
-            - name: PYTHON_GUNICORN_CUSTOM_THREAD_NUM
-              value: {{ .Values.gunicorn.threadNumber | quote }}
+            - name: XDG_RUNTIME_DIR # Set gunicorn to use /tmp for control file
+              value: "/tmp"
 
           ports:
             - containerPort: 8050
