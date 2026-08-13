@@ -90,7 +90,12 @@ spec:
   - to: []
     ports:
       - port: 25
+
+---
+
 {{- end }}
+
+
 
 # Explicitly allow external access to HTTPS connections
 {{ if .Values.networkPolicy.allowHTTPSEgress -}}
