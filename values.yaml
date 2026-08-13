@@ -1,7 +1,7 @@
 commonLabels: {} # Labels to add to all deployed resources.
 commonAnnotations: {} # Annotations to add to all deployed resources.
 
-extraDeploy: [] # A list of addtional resources to be deployed.
+extraDeploy: [] # A list of additional resources to be deployed.
 
 press:
   name: null # The press name to set up when installing Janeway.
@@ -85,8 +85,9 @@ enableOrcid: false # Whether or not to enable the ORCID integration for Janeway.
 
 networkPolicy:
   allowInterpodTraffic: false # Create a networkPolicy to explicitly allow inter-pod communication.
-  allowIngress: true # Create a networkPolicy to explicity allow http ingress into the Janeway deployment.
-  allowSMTPEgress: true # Create a networkPolicy to eplicity allow SMTP egress from the Janeway deployment.
+  allowIngress: true # Create a networkPolicy to explicitly allow http ingress into the Janeway deployment.
+  allowSMTPEgress: true # Create a networkPolicy to explicitly allow SMTP egress from the Janeway deployment.
+  allowHTTPSEgress: true # Create a networkPolicy to explicitly allow Janeway to reach out to HTTPS servers.
 
 email:
   host: null # The email host for Janeway to send SMTP emails.

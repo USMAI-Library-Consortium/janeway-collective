@@ -91,3 +91,31 @@ spec:
     ports:
       - port: 25
 {{- end }}
+
+# Explicitly allow external access to HTTPS connections
+{{ if .Values.networkPolicy.allowHTTPSEgress -}}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "janeway.fullname" . }}-https
+  namespace: {{ .Release.Namespace }}
+  {{- $labels := include "common.tplvalues.merge" ( dict "values" ( list .Values.commonLabels ) "context" . ) }}
+  labels: {{- include "common.labels.standard" ( dict "customLabels" $labels "context" $ ) | nindent 4 }}
+    {{ include "common.labels.component.app" . }}
+  {{ if .Values.commonAnnotations -}}
+  {{- $annotations := include "common.tplvalues.merge" ( dict "values" ( list .Values.commonAnnotations ) "context" . ) }}
+  annotations: {{- include "common.tplvalues.render" ( dict "value" $annotations "context" $ ) | nindent 4 }}
+  {{- end }}
+spec:
+  podSelector:
+    {{- $podLabels := include "common.tplvalues.merge" ( dict "values" ( list .Values.commonLabels ) "context" . ) }}
+    matchLabels:
+      {{- include "common.labels.matchLabels" ( dict "customLabels" $podLabels "context" $ ) | nindent 6 }}
+      {{ include "common.labels.component.app" . }}
+  policyTypes:
+  - Egress
+  egress:
+  - to: []
+    ports:
+      - port: 443
+{{- end }}
