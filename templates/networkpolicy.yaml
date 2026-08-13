@@ -60,9 +60,9 @@ spec:
   - from: []
     ports:
       - port: 8000 # The port of the Nginx container on the pod.
-{{- end }}
 
 ---
+{{- end }}
 
 # Explicitly allow external access to SMTP server
 {{ if .Values.networkPolicy.allowSMTPEgress -}}
@@ -92,10 +92,7 @@ spec:
       - port: 25
 
 ---
-
 {{- end }}
-
-
 
 # Explicitly allow external access to HTTPS connections
 {{ if .Values.networkPolicy.allowHTTPSEgress -}}
