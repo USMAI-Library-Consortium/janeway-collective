@@ -3,6 +3,10 @@ commonAnnotations: {} # Annotations to add to all deployed resources.
 
 extraDeploy: [] # A list of additional resources to be deployed.
 
+image:
+  repository: "ghcr.io/usmai-library-consortium/janeway" # The repository from which to pull the janeway image. We only guarantee compatibility with our published images.
+  tag: "v1.8.0.base.0-1" # The image tag to use. We only guarantee compatibility with the included image version.
+
 press:
   name: null # The press name to set up when installing Janeway.
   contact: null # The press contact to set up when installing Janeway.
@@ -62,9 +66,6 @@ podAnnotations: {} # Additional annotations for the Deployment Pod(s).
 secrets:
   imagePullSecretName: null # If a secret is needed to pull the image.
   existingSuperUserSecret: null # Use an existing secret to set up the Superuser Password.
-imageOverride:
-  repository: null # Use a different docker repository for Janeway image.
-  tag: null # Use a different Janeway image version. NOT RECOMMENDED.
 resources:
   requests:
     memory: 2Gi # Set the minimum memory requirement for the Janeway Deployment.
@@ -148,7 +149,7 @@ cron:
         - /bin/bash
         - -c
         - /opt/venv/bin/python3 /vol/janeway/src/manage.py generate_sitemaps
-    - name: notifications
+    - name: reader-notifications
       schedule: "0 23 * * *"
       concurrencyPolicy: Forbid
       startingDeadlineSeconds: 360
@@ -158,6 +159,26 @@ cron:
         - /bin/bash
         - -c
         - /opt/venv/bin/python3 /vol/janeway/src/manage.py send_publication_notifications
+    - name: import-ror-data
+      schedule: "47 2 3 * *"
+      concurrencyPolicy: Forbid
+      startingDeadlineSeconds: 360
+      backoffLimit:
+      restartPolicy: Never
+      command:
+        - /bin/bash
+        - -c
+        - /opt/venv/bin/python3 /vol/janeway/src/manage.py import_ror_data
+    - name: match-ror-ids
+      schedule: "47 2 4 * *"
+      concurrencyPolicy: Forbid
+      startingDeadlineSeconds: 360
+      backoffLimit:
+      restartPolicy: Never
+      command:
+        - /bin/bash
+        - -c
+        - /opt/venv/bin/python3 /vol/janeway/src/manage.py match_ror_ids
   additionalJobs: [] # Any additional cron jobs that you'd like to add using the built-in Cron Job template.
 
 service:
