@@ -5,7 +5,7 @@ extraDeploy: [] # A list of additional resources to be deployed.
 
 image:
   repository: "ghcr.io/usmai-library-consortium/janeway" # The repository from which to pull the janeway image. We only guarantee compatibility with our published images.
-  tag: "v1.8.0.base.0-1" # The image tag to use. We only guarantee compatibility with the included image version.
+  tag: "v1.8.1.base.0-0" # The image tag to use. We only guarantee compatibility with the included image version.
 
 press:
   name: null # The press name to set up when installing Janeway.
